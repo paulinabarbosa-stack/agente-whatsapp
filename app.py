@@ -17,14 +17,36 @@ def webhook():
         numero = None
         mensagem = None
 
-        # Tenta diferentes formatos
-        if "data" in data:
+        # Formato auroradtna
+        if "message" in data:
+            msg = data["message"]
+            numero = data.get("sender", "").replace("@s.whatsapp.net", "")
+            mensagem = (
+                msg.get("content") or
+                msg.get("conversation") or
+                msg.get("text") or
+                msg.get("extendedTextMessage", {}).get("text")
+            )
+
+        # Formato alternativo com "data"
+        elif "data" in data:
             d = data["data"]
             if "key" in d:
                 numero = d["key"]["remoteJid"].replace("@s.whatsapp.net", "")
             if "message" in d:
                 msg = d["message"]
-                mensagem = msg.get("conversation") or msg.get("extendedTextMessage", {}).get("text")
+                mensagem = (
+                    msg.get("conversation") or
+                    msg.get("content") or
+                    msg.get("extendedTextMessage", {}).get("text")
+                )
+
+        # Formato direto com "chat"
+        if not mensagem and "chat" in data:
+            chat = data["chat"]
+            mensagem = chat.get("wa_lastMessageTextVote") or chat.get("text")
+            if not numero:
+                numero = data.get("sender", "").replace("@s.whatsapp.net", "")
 
         if not numero or not mensagem:
             print("Mensagem ignorada ou formato desconhecido")
@@ -61,6 +83,3 @@ def enviar_mensagem(numero, texto):
     }
     r = requests.post(url, json=body, headers=headers)
     print("Envio status:", r.status_code, r.text)
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
