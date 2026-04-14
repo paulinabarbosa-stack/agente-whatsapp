@@ -43,11 +43,11 @@ def ask_openai(text):
     return r.json()["choices"][0]["message"]["content"]
 
 def send_message(number, text):
-    url = f"{UAZAPI_BASE_URL}/send/text"
+    url = f"{UAZAPI_BASE_URL}/send
     headers = {"token": UAZAPI_TOKEN}
     body = {
-        "to": f"{number}@s.whatsapp.net",
-        "text": text
+        "phone": number,
+        "message": text
     }
     r = requests.post(url, json=body, headers=headers)
     print("Send status:", r.status_code, r.text)
