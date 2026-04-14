@@ -5,22 +5,38 @@ import os
 app = Flask(__name__)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-UAZAPI_BASE_URL = "https://free.uazapi.com"
-UAZAPI_TOKEN = "08dd3ec9-c3fc-4069-8b02-c8afe369df67"
-INSTANCE_ID = "instanciaurora"
+UAZAPI_BASE_URL = os.environ.get("UAZAPI_BASE_URL", "https://auroradtna.uazapi.com")
+UAZAPI_TOKEN = os.environ.get("UAZAPI_TOKEN")
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
+    print("DADOS RECEBIDOS:", data)
 
     try:
-        numero = data["data"]["key"]["remoteJid"].replace("@s.whatsapp.net", "")
-        mensagem = data["data"]["message"]["conversation"]
-    except:
-        return "ok", 200
+        numero = None
+        mensagem = None
 
-    resposta = perguntar_openai(mensagem)
-    enviar_mensagem(numero, resposta)
+        # Tenta diferentes formatos
+        if "data" in data:
+            d = data["data"]
+            if "key" in d:
+                numero = d["key"]["remoteJid"].replace("@s.whatsapp.net", "")
+            if "message" in d:
+                msg = d["message"]
+                mensagem = msg.get("conversation") or msg.get("extendedTextMessage", {}).get("text")
+
+        if not numero or not mensagem:
+            print("Mensagem ignorada ou formato desconhecido")
+            return "ok", 200
+
+        print(f"De: {numero} | Mensagem: {mensagem}")
+        resposta = perguntar_openai(mensagem)
+        print(f"Resposta: {resposta}")
+        enviar_mensagem(numero, resposta)
+
+    except Exception as e:
+        print("ERRO:", e)
 
     return "ok", 200
 
@@ -43,7 +59,8 @@ def enviar_mensagem(numero, texto):
         "to": f"{numero}@s.whatsapp.net",
         "text": texto
     }
-    requests.post(url, json=body, headers=headers)
+    r = requests.post(url, json=body, headers=headers)
+    print("Envio status:", r.status_code, r.text)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
