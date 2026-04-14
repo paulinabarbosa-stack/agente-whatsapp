@@ -5,6 +5,7 @@ import os
 app = Flask(__name__)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+UAZAPI_BASE_URL = "https://free.uazapi.com"
 UAZAPI_TOKEN = "08dd3ec9-c3fc-4069-8b02-c8afe369df67"
 INSTANCE_ID = "instanciaurora"
 
