@@ -11,75 +11,16 @@ UAZAPI_TOKEN = os.environ.get("UAZAPI_TOKEN")
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data = request.json
-    print("DADOS RECEBIDOS:", data)
+    print("DADOS:", data)
 
     try:
         numero = None
         mensagem = None
 
-        # Formato auroradtna
-        if "message" in data:
-            msg = data["message"]
-            numero = data.get("sender", "").replace("@s.whatsapp.net", "")
-            mensagem = (
-                msg.get("content") or
-                msg.get("conversation") or
-                msg.get("text") or
-                msg.get("extendedTextMessage", {}).get("text")
-            )
-
-        # Formato alternativo com "data"
-        elif "data" in data:
-            d = data["data"]
-            if "key" in d:
-                numero = d["key"]["remoteJid"].replace("@s.whatsapp.net", "")
-            if "message" in d:
-                msg = d["message"]
-                mensagem = (
-                    msg.get("conversation") or
-                    msg.get("content") or
-                    msg.get("extendedTextMessage", {}).get("text")
-                )
-
-        # Formato direto com "chat"
-        if not mensagem and "chat" in data:
-            chat = data["chat"]
-            mensagem = chat.get("wa_lastMessageTextVote") or chat.get("text")
-            if not numero:
-                numero = data.get("sender", "").replace("@s.whatsapp.net", "")
-
-        if not numero or not mensagem:
-            print("Mensagem ignorada ou formato desconhecido")
-            return "ok", 200
-
-        print(f"De: {numero} | Mensagem: {mensagem}")
-        resposta = perguntar_openai(mensagem)
-        print(f"Resposta: {resposta}")
-        enviar_mensagem(numero, resposta)
-
-    except Exception as e:
-        print("ERRO:", e)
-
-    return "ok", 200
-
-def perguntar_openai(mensagem):
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    body = {
-        "model": "gpt-4o-mini",
-        "messages": [{"role": "user", "content": mensagem}]
-    }
-    r = requests.post("https://api.openai.com/v1/chat/completions", json=body, headers=headers)
-    return r.json()["choices"][0]["message"]["content"]
-
-def enviar_mensagem(numero, texto):
-    url = f"{UAZAPI_BASE_URL}/send/text"
-    headers = {"token": UAZAPI_TOKEN}
-    body = {
-        "to": f"{numero}@s.whatsapp.net",
-        "text": texto
-    }
-    r = requests.post(url, json=body, headers=headers)
-    print("Envio status:", r.status_code, r.text)
+        # Pega o número do remetente
+        msg = data.get("message", {})
+        chat = data.get("chat", {})
+        
+        numero = msg.get("chatid", "").replace("@s.whatsapp.net", "")
+        if not numero:
+            numero = chat.get("wa_chatid", "").replace
