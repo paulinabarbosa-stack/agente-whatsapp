@@ -43,7 +43,7 @@ def ask_openai(text):
     return r.json()["choices"][0]["message"]["content"]
 
 def send_message(number, text):
-    url = f"{UAZAPI_BASE_URL}/send
+url = f"{UAZAPI_BASE_URL}/send/text"
     headers = {"token": UAZAPI_TOKEN}
     body = {
         "phone": number,
