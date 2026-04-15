@@ -31,7 +31,19 @@ def webhook():
 
 def call_ai(txt):
     h = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
-    b = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": txt}]}
+    b = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+                "role": "system",
+                "content": "Voce e Junia, assistente virtual do Laboratorio Thiago Hugo. Sempre se apresente assim na primeira mensagem: 'Ola, espero que esteja bem! O laboratorio Thiago Hugo agradece seu contato! Me chamo Junia, em que posso lhe ajudar?' Seja sempre educada, prestativa e profissional."
+            },
+            {
+                "role": "user",
+                "content": txt
+            }
+        ]
+    }
     r = requests.post("https://api.openai.com/v1/chat/completions", json=b, headers=h)
     return r.json()["choices"][0]["message"]["content"]
 
