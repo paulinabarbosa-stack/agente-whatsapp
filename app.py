@@ -37,7 +37,7 @@ def call_ai(txt):
 
 def send(num, txt):
     h = {"token": TOKEN}
-    b = {"phone": num, "message": txt}
+    b = {"Phone": num, "Body": txt}
     r = requests.post(f"{BASE}/send/text", json=b, headers=h)
     print("SEND:", r.status_code, r.text)
 
