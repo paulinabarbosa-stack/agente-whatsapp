@@ -4,9 +4,9 @@ import os
 
 app = Flask(__name__)
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-UAZAPI_BASE_URL = os.environ.get("UAZAPI_BASE_URL", "https://auroradtna.uazapi.com")
-UAZAPI_TOKEN = os.environ.get("UAZAPI_TOKEN")
+KEY = os.environ.get("OPENAI_API_KEY")
+BASE = os.environ.get("UAZAPI_BASE_URL", "https://auroradtna.uazapi.com")
+TOKEN = os.environ.get("UAZAPI_TOKEN")
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -15,42 +15,31 @@ def webhook():
     try:
         msg = data.get("message", {})
         chat = data.get("chat", {})
-        number = msg.get("chatid", "").replace("@s.whatsapp.net", "")
-        if not number:
-            number = chat.get("wa_chatid", "").replace("@s.whatsapp.net", "")
-        text = msg.get("content") or msg.get("text") or chat.get("wa_lastMessageTextVote")
-        print(f"Number: {number} | Text: {text}")
-        if not number or not text:
-            print("Ignored")
+        num = msg.get("chatid", "").replace("@s.whatsapp.net", "")
+        if not num:
+            num = chat.get("wa_chatid", "").replace("@s.whatsapp.net", "")
+        txt = msg.get("content") or msg.get("text") or chat.get("wa_lastMessageTextVote")
+        print(num, txt)
+        if not num or not txt:
             return "ok", 200
-        reply = ask_openai(text)
-        print(f"Reply: {reply}")
-        send_message(number, reply)
+        rep = call_ai(txt)
+        print(rep)
+        send(num, rep)
     except Exception as e:
-        print("ERROR:", e)
+        print("ERR:", e)
     return "ok", 200
 
-def ask_openai(text):
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    body = {
-        "model": "gpt-4o-mini",
-        "messages": [{"role": "user", "content": text}]
-    }
-    r = requests.post("https://api.openai.com/v1/chat/completions", json=body, headers=headers)
+def call_ai(txt):
+    h = {"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"}
+    b = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": txt}]}
+    r = requests.post("https://api.openai.com/v1/chat/completions", json=b, headers=h)
     return r.json()["choices"][0]["message"]["content"]
 
-def send_message(number, text):
-url = f"{UAZAPI_BASE_URL}/send/text"
-    headers = {"token": UAZAPI_TOKEN}
-    body = {
-        "phone": number,
-        "message": text
-    }
-    r = requests.post(url, json=body, headers=headers)
-    print("Send status:", r.status_code, r.text)
+def send(num, txt):
+    h = {"token": TOKEN}
+    b = {"phone": num, "message": txt}
+    r = requests.post(f"{BASE}/send/text", json=b, headers=h)
+    print("SEND:", r.status_code, r.text)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
